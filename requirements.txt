@@ -1,0 +1,17 @@
+# Data Extraction
+pymupdf
+
+# Backend
+fastapi
+uvicorn
+
+# Database & Vectors
+psycopg2-binary
+pydantic
+python-dotenv
+
+# AI & RAG
+langchain
+langchain-community
+sentence-transformers
+# langchain-openai (optional if using OpenAI)
