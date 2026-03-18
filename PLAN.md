@@ -15,7 +15,8 @@ This document outlines the step-by-step implementation of the Maliki AI Assistan
 - [ ] **Step 2.4**: Create indexes for both vector and keyword search (Hybrid Search).
 
 ## Phase 3: RAG Core Implementation (Qwen Integration)
-- [ ] **Step 3.1**: Set up **Qwen-2.5** (using Ollama locally or a cloud API).
+- [x] **Step 3.1**: Set up **Gemini-2.5-Flash** (Current RAG engine).
+- [ ] **Step 3.2**: Optional exploration of **Qwen-2.5** for local use.
 - [ ] **Step 3.2**: Design a scholarly **System Prompt** for Maliki Fiqh contexts.
 - [ ] **Step 3.3**: Implement the retrieval chain (Query -> Vector Search -> Context Assembly).
 

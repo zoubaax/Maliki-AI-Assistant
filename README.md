@@ -14,7 +14,7 @@ A sophisticated **Retrieval-Augmented Generation (RAG)** system designed specifi
 
 | Layer          | Technology                          |
 | -------------- | ----------------------------------- |
-| **LLM**        | Qwen-2.5 (Ollama / API)             |
+| **LLM**        | Gemini 2.5 Flash (Initial Engine) / Qwen-2.5 |
 | **Database**   | PostgreSQL + `pgvector`             |
 | **Framework**  | FastAPI (Python)                    |
 | **Orchestration**| LangChain / LlamaIndex              |
@@ -28,5 +28,5 @@ A sophisticated **Retrieval-Augmented Generation (RAG)** system designed specifi
 1.  **Ingestion**: PDFs/Word files are chunked into semantic segments.
 2.  **Indexing**: Chunks are embedded and stored in **PostgreSQL** alongside metadata.
 3.  **Retrieval**: User queries are vectorized to find the top $k$ relevant passages.
-4.  **Augmentation**: Qwen-2.5 receives the user's question + relevant passages as context.
-5.  **Generation**: Qwen generates a scholarly answer with precise book/page references.
+4.  **Augmentation**: Gemini 2.5 Flash receives the user's question + relevant passages as context.
+5.  **Generation**: Gemini generates a scholarly answer with precise book/page references.
