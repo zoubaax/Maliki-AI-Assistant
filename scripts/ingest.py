@@ -39,7 +39,6 @@ def setup_database():
     cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
     # 2. Create chunks table
-    # Vector dimension for MiniLM-L12-v2 is 384
     cur.execute("""
         CREATE TABLE IF NOT EXISTS chunks (
             id SERIAL PRIMARY KEY,
@@ -49,6 +48,10 @@ def setup_database():
             embedding vector(384)
         );
     """)
+    
+    # 3. Clear existing data (to avoid duplicates when re-ingesting)
+    print("🧹 Clearing old data for a fresh start...")
+    cur.execute("TRUNCATE TABLE chunks;")
     
     conn.commit()
     cur.close()

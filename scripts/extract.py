@@ -52,11 +52,20 @@ def save_manifest(data, output_path="data/processed/extracted_data.json"):
     print(f"💾 Data saved to {output_path}")
 
 if __name__ == "__main__":
-    # Point to your book folder or a specific file
-    BOOK_PATH = "books/كتاب  مختصر عبد الرحمن الأخضري في العبادات على مذهب الإمام مالك.pdf"
+    BOOK_DIR = "data/raw"
+    ALL_DATA = []
     
-    if os.path.exists(BOOK_PATH):
-        extracted_data = extract_pdf_pages(BOOK_PATH)
-        save_manifest(extracted_data)
+    if os.path.exists(BOOK_DIR):
+        pdf_files = [f for f in os.listdir(BOOK_DIR) if f.lower().endswith(".pdf")]
+        
+        if not pdf_files:
+            print(f"❌ No PDF files found in {BOOK_DIR}. Please add your books first.")
+        else:
+            for pdf_file in pdf_files:
+                pdf_path = os.path.join(BOOK_DIR, pdf_file)
+                extracted_data = extract_pdf_pages(pdf_path)
+                ALL_DATA.extend(extracted_data)
+            
+            save_manifest(ALL_DATA)
     else:
-        print(f"❌ File not found at {BOOK_PATH}. Please check the filename.")
+        print(f"❌ Directory {BOOK_DIR} not found.")

@@ -1,28 +1,99 @@
 import json
 import os
 import re
+import unicodedata
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
+def is_reversed_arabic(text):
+    """
+    Heuristic to check if Arabic text is reversed by looking for common markers
+    that appear in their visual (reversed) forms.
+    """
+    # These are common words or particles in their visually REVERSED forms
+    # Example: 'على' -> 'ىلع', 'في' -> 'ىف', 'من' -> 'نم'.
+    reversed_markers = [
+        'هللا',   # الله
+        'دمحم',   # محمد
+        'ىلا',    # الى
+        'ىلع',    # على
+        'ىف',     # فى
+        'هذهف',   # هذه
+        'نم',     # من
+        'نع',     # عن
+        'يتلا',   # التي
+        'نايب',   # بيان
+        'هبهذم',  # مذهبه
+        'هباحصأ', # أصحابه
+        'نيدلا',  # الدين
+        'هقفلا',  # الفقه
+        'بولملا'  # المطلوب
+    ]
+    # If we find at least 2 markers, or 1 strong marker in a short text
+    count = sum(1 for marker in reversed_markers if marker in text)
+    
+    # Check for reversed particles/common words which are hard to miss if the whole text is reversed
+    if count >= 1:
+        # Check if the word order also looks reversed?
+        # Actually, visual OCR often reverses the whole line character-by-character.
+        return True
+    return False
+
+def fix_visual_arabic(text):
+    """
+    Fixes reversed Arabic text and swaps brackets.
+    """
+    if not is_reversed_arabic(text):
+        return text
+    
+    # Reverse the whole string
+    text = text[::-1]
+    
+    # Swap parentheses and brackets because they get flipped in character reversal
+    swaps = str.maketrans("()[]<>{}", ")(][><}{")
+    text = text.translate(swaps)
+    return text
 
 def normalize_arabic(text):
     """
-    Normalizes Arabic text for better search:
-    - Removes Tashkeel (vowels).
-    - Normalizes different forms of Alef (أ، إ، آ) to plain Alef (ا).
-    - Normalizes Taa Marbuta (ة) to Haa (ه).
-    - Normalizes Yaa (ى) to (ي).
+    Normalizes Arabic text and cleans garbage OCR artifacts.
     """
-    # Remove Tashkeel (Fatha, Damma, Kasra, Shadda, etc.)
+    # 0. Standardize character forms (converts visual presentation forms to logical)
+    text = unicodedata.normalize('NFKC', text)
+    
+    # 1. Preliminary cleanup of non-Arabic filler noise often at ends or in headers
+
+    # Remove strings of non-Arabic letters/numbers that look like noise
+    text = re.sub(r'[A-Za-z0-9]{5,}', ' ', text) # Remove long latin sequences
+    
+    # 2. Fix Visual Reversal (if detected)
+    text = fix_visual_arabic(text)
+    
+    # 3. Clean up generic noise
+    text = re.sub(r'[A-Z]{2,}', ' ', text) # Remove uppercase sequences (like HE, HH, BR)
+    text = re.sub(r'[\u0000-\u001F\u007F-\u009F]', ' ', text) # Remove non-printable
+    
+    # 4. Remove Tashkeel (vowels) except for essential ones if needed (usually removed for RAG)
     tashkeel = re.compile(r'[\u064B-\u0652]')
     text = re.sub(tashkeel, "", text)
     
-    # Simple Normalization
+    # 5. Arabic character normalization
     text = re.sub(r'[أإآ]', 'ا', text)
-    # text = re.sub(r'ة', 'ه', text)  # Optional, sometimes better to keep it
-    # text = re.sub(r'ى', 'ي', text)  # Optional
+    # We keep 'ى' vs 'ي' as some users prefer original spelling, 
+    # but the LLM is usually fine with either.
     
-    # Remove multiple spaces
+    # 6. Remove OCR artifacts like multiple symbols or dots
+    text = re.sub(r'[ـ]{1,}', '', text) # Remove kashida (stretching character)
+    
+    # 7. Keep basic punctuation but remove other noise
+    # We allow Arabic letters, English letters (for citations/names), numbers, and basic punctuation
+    text = re.sub(r'[^\w\s\u0600-\u06FF\.\,\?\!\(\)\[\]]', ' ', text)
+    
+    # 8. Final cleanup of multiple spaces
     text = re.sub(r'\s+', ' ', text).strip()
     return text
+
+
 
 def create_chunks(input_path, output_path):
     """
@@ -49,20 +120,41 @@ def create_chunks(input_path, output_path):
     print("🔄 Processing and Chunking...")
     for entry in data:
         original_text = entry["content"]
-        # We normalize for indexing, but can keep original if needed.
-        # For this stage, we'll normalize everything to ensure the LLM doesn't get confused.
         normalized_text = normalize_arabic(original_text)
         
+        # Filter out pages that are too short or mostly garbage after normalization
+        if len(normalized_text) < 10:
+            continue
+            
+        # Optional: Check Arabic character density
+        # Include standard Arabic, supplements, and presentation forms A & B
+        # Standard: \u0600-\u06FF
+        # Extended/Supp: \u0750-\u077F, \u08A0-\u08FF
+        # Presentation Forms: \uFB50-\uFDFF, \uFE70-\uFEFF
+        arabic_range = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]')
+        arabic_chars = len(arabic_range.findall(normalized_text))
+        
+        if len(normalized_text) > 0 and (arabic_chars / len(normalized_text)) < 0.3:
+            # Lowering the threshold slightly as some OCR has more noise 
+            # and ensuring we catch the Presentation Forms.
+            continue
+
+
         # Split text into chunks
         chunks = text_splitter.split_text(normalized_text)
         
         for i, chunk_text in enumerate(chunks):
+            # Final check on chunk quality
+            if len(chunk_text) < 20:
+                continue
+            
             all_chunks.append({
                 "book": entry["book"],
                 "page": entry["page"],
                 "chunk_id": i + 1,
                 "content": chunk_text
             })
+
 
     # Save processed chunks
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
