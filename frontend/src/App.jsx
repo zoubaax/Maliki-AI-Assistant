@@ -59,7 +59,9 @@ const App = () => {
     setIsTyping(true);
 
     try {
-      const response = await axios.post('/ask', { question: userMessage });
+      // Support dynamic backend URL from environment
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await axios.post(`${apiBase}/ask`, { question: userMessage });
       await new Promise(resolve => setTimeout(resolve, 600));
 
       setMessages(prev => [...prev, { 
