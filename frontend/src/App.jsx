@@ -1,227 +1,218 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Building, 
-  Bot, 
-  Scroll, 
-  Cpu, 
-  Quote, 
-  Sparkles, 
-  BookOpen, 
-  CheckCircle, 
-  PenLine, 
   Send, 
-  Gavel, 
-  UserCircle,
-  Loader2,
+  Bot, 
+  User, 
+  Sparkles,
+  Gavel,
+  Landmark,
+  Scroll,
+  BookOpen,
   Layers,
-  List
+  List,
+  Loader2,
+  Cpu,
+  PenLine,
+  ChevronLeft
 } from 'lucide-react';
 
 const App = () => {
   const [messages, setMessages] = useState([
     {
-      role: 'bot',
       id: 'welcome',
-      text: 'السلام عليكم ورحمة الله وبركاته. مساعد شرعي متخصص في **الفقه المالكي**. استخرج الأحكام من أمهات الكتب: "مختصر الأخضري"، "الرسالة"، "المدونة".',
+      role: 'assistant',
+      content: "السلام عليكم ورحمة الله وبركاته. أنا **المساعد المالكي**، خادمكم في استخراج الأحكام الفقهية الموثقة من أمهات الكتب. ما هي المسألة التي تشغل بالكم اليوم؟",
       sources: []
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, [messages, isTyping]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
-    const userMessage = {
-      role: 'user',
-      id: Date.now().toString(),
-      text: input,
-    };
+  const handleSend = async (e, directMessage = null) => {
+    if (e && e.preventDefault) e.preventDefault();
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
+    const messageToSend = directMessage || input;
+    if (!messageToSend.trim() || isLoading) return;
+
+    const userMessage = messageToSend.trim();
+    if (!directMessage) setInput('');
+    
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userMessage }]);
     setIsLoading(true);
+    setIsTyping(true);
 
     try {
-      const response = await axios.post('/ask', { question: input });
-      const botMessage = {
-        role: 'bot',
+      const response = await axios.post('/ask', { question: userMessage });
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      setMessages(prev => [...prev, { 
         id: (Date.now() + 1).toString(),
-        text: response.data.answer,
-        sources: response.data.sources || [],
-      };
-      setMessages((prev) => [...prev, botMessage]);
+        role: 'assistant', 
+        content: response.data.answer,
+        sources: response.data.sources || []
+      }]);
     } catch (error) {
-      console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'bot',
-          id: (Date.now() + 1).toString(),
-          text: '⚠️ عذرًا، حدث خطأ في الاتصال بالمكتبة المالكية. يرجى المحاولة لاحقًا.',
-          sources: [],
-        },
-      ]);
+      console.error('Chat Error:', error);
+      setMessages(prev => [...prev, {
+        id: 'error',
+        role: 'assistant',
+        content: "⚠️ عذرًا، حدث خطأ في الاتصال بالمكتبة المالكية. يرجى المحاولة لاحقًا.",
+        sources: []
+      }]);
     } finally {
       setIsLoading(false);
+      setIsTyping(false);
     }
   };
 
+  const handleQuickQuestion = (question) => {
+    handleSend(null, question);
+  };
+
+  const quickQuestions = [
+    { text: "نواقض الوضوء عند المالكية؟", icon: <Sparkles size={16} /> },
+    { text: "حكم الجمع في السفر؟", icon: <Scroll size={16} /> },
+    { text: "أركان الصلاة وشروطها؟", icon: <Gavel size={16} /> },
+    { text: "كيفية صلاة الجنازة؟", icon: <BookOpen size={16} /> }
+  ];
+
   return (
-    <div className="app-container" dir="rtl">
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-logo-container">
-          <div className="logo-icon-box">
-             <Building className="text-gold-primary" size={28} />
+    <div className="app-viewport">
+      {/* Header (Simplified) */}
+      <header className="app-header-v2">
+        <div className="header-info-v2">
+          <div className="header-icon-box-v2">
+            <Landmark size={20} className="text-gold-primary" />
           </div>
-          <div className="header-title-box">
-            <h1>
-              <Bot className="text-gold-muted" size={20} />
-              المساعد المالكي
-            </h1>
-            <p className="header-subtitle">
-              <Scroll className="text-gold-dim" size={14} />
-              Maliki AI Assistant · pure css
-            </p>
+          <div className="header-text-v2 text-right">
+            <h1>المساعد المالكي</h1>
+            <div className="header-status-v2">
+              <span className="status-dot-v2"></span>
+              <span>واجهة الفقيه · متصل</span>
+            </div>
           </div>
         </div>
 
-        <div className="tech-badge">
-          <Cpu className="text-gold-muted" size={18} />
-          <span>Gemini 2.5 Flash · React</span>
+        {/* Removed Tech Badge as requested */}
+        <div style={{ opacity: 0.5, fontSize: '0.7rem' }}>
+           <Cpu size={14} />
         </div>
       </header>
 
-      {/* Main Chat area */}
-      <main ref={scrollRef} className="chat-main">
-        <AnimatePresence mode="popLayout">
-          {messages.map((msg) => (
-            <motion.div
-              layout
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={msg.id}
-              className={`message-row ${msg.role === 'user' ? 'message-user' : ''}`}
-            >
-              {msg.role === 'bot' && (
-                <div className="avatar-box">
-                   <Gavel className="text-gold-primary" size={20} />
+      {/* Main Chat Area */}
+      <main ref={scrollRef} className="chat-main-v2 scrollbar-v2">
+        <div className="chat-center-container">
+          <AnimatePresence mode="popLayout">
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`message-row-v2 ${msg.role === 'user' ? 'row-user' : ''}`}
+              >
+                <div className={`avatar-v2 ${msg.role === 'user' ? 'avatar-user-v2' : 'avatar-bot-v2'}`}>
+                  {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                 </div>
-              )}
+                
+                <div className={`message-box-v2`}>
+                  <div className={`bubble-v2 ${msg.role === 'user' ? 'user-bubble-v2' : 'bot-bubble-v2'}`}>
+                    {msg.id === 'welcome' && (
+                       <p style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--gold-primary)', fontWeight: 'bold' }}>
+                         المكتبة المالكية الذكية
+                       </p>
+                    )}
+                    <div className="markdown-body" style={{ fontSize: '0.9rem' }}>
+                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>{msg.content}</ReactMarkdown>
+                    </div>
 
-              <div className="message-content-wrapper">
-                <span className="message-label">
-                  {msg.role === 'user' ? <UserCircle size={12} /> : <Bot size={12} />}
-                  {msg.role === 'user' ? 'سؤالك' : 'الجواب المالكي'}
-                </span>
-
-                <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-card'}`}>
-                  {msg.id === 'welcome' && (
-                    <Quote className="quote-icon" size={40} style={{ opacity: 0.1, float: 'left', margin: '-5px 0 0 -5px' }} />
-                  )}
-                  {msg.id === 'welcome' && (
-                     <p style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                       <Sparkles className="text-gold-primary" size={20} /> 
-                       السلام عليكم ورحمة الله وبركاته
-                     </p>
-                  )}
-                  <div className="markdown-body">
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                  </div>
-                  
-                  {msg.sources && msg.sources.length > 0 && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="sources-container"
-                    >
-                      <p className="sources-label">
-                        <List size={12} /> المصادر المرجعية:
-                      </p>
-                      <div className="source-chips">
-                        {msg.sources.map((source, i) => (
-                           <div key={i} className="source-chip">
-                              <BookOpen size={12} className="text-gold-muted" />
-                              {source.book || 'مخطوطة'} (ص {source.page || '--'})
-                              {source.volume && (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <Layers size={12} className="text-gold-dim" /> ج{source.volume}
-                                </span>
-                              )}
-                           </div>
-                        ))}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="sources-v2">
+                        <p className="source-label-v2"><List size={10} /> التوثيق المرجعي:</p>
+                        <div className="source-chips-v2">
+                          {msg.sources.map((src, i) => (
+                            <div key={i} className="chip-v2">
+                              {src.book} (ص {src.page})
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </motion.div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
+            ))}
 
-              {msg.role === 'user' && (
-                <div className="avatar-box">
-                   <UserCircle className="text-gold-muted" size={24} />
+            {isTyping && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="message-row-v2">
+                <div className="avatar-v2 avatar-bot-v2">
+                  <Bot size={16} />
                 </div>
-              )}
-            </motion.div>
-          ))}
-          
-          {isLoading && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="message-row"
-            >
-              <div className="avatar-box">
-                <Bot className="text-gold-muted animate-pulse" size={20} />
+                <div className="bubble-v2 bot-bubble-v2">
+                  <div className="typing-dots">
+                    <div className="dot"></div>
+                    <div className="dot"></div>
+                    <div className="dot"></div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {messages.length === 1 && (
+            <div className="hero-v2">
+              <h2>مجلس فقهي مالكي موثق</h2>
+              <div className="questions-grid-v2">
+                {quickQuestions.map((q, i) => (
+                  <button key={i} onClick={() => handleQuickQuestion(q.text)} className="q-btn-v2">
+                    <span style={{ opacity: 0.6 }}>{q.icon}</span>
+                    <span>{q.text}</span>
+                  </button>
+                ))}
               </div>
-              <div className="loading-indicator">
-                <Loader2 className="animate-spin" size={20} />
-                <span>البحث في المتون المالكية...</span>
-              </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </main>
 
-      {/* Input section */}
-      <footer className="app-footer">
-        <form onSubmit={handleSendMessage} className="input-form">
-          <div className="input-icon">
-            <PenLine size={24} />
+      {/* Input Form */}
+      <footer className="app-footer-v2">
+        <form onSubmit={handleSend} className="input-wrapper-v2">
+          <div className="input-icon-v2">
+            <PenLine size={20} />
           </div>
           <input 
+            ref={inputRef}
             type="text" 
-            value={input}
+            value={input} 
             onChange={(e) => setInput(e.target.value)}
-            placeholder="اكتب مسألتك الفقهية ... (مثال: ما هي نواقض الوضوء عند المالكية؟)" 
-            className="chat-input"
-            disabled={isLoading}
+            placeholder="اسأل عن مسألة فقهية ..." 
+            className="input-field-v2"
           />
-          <button 
-            type="submit" 
-            disabled={!input.trim() || isLoading}
-            className={`send-button ${input.trim() && !isLoading ? 'active' : 'disabled'}`}
-          >
-            <Send size={24} />
+          <button type="submit" disabled={!input.trim() || isLoading} className="send-action-v2">
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
           </button>
-          
-          <div className="input-hint">
-            <CheckCircle size={12} /> اسأل عن أي مسألة فقهية مالكية موثقة
-          </div>
         </form>
+        <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.65rem', color: 'rgba(212, 175, 55, 0.4)' }}>
+           مجلس علم رقمي مستخرج من المتون المعتمدة
+        </div>
       </footer>
     </div>
   );
