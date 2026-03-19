@@ -29,9 +29,6 @@ embed_model = SentenceTransformer(MODEL_NAME)
 
 app = FastAPI(title="Maliki AI Assistant")
 
-# Setup Templates
-templates = Jinja2Templates(directory="app/templates")
-
 class QueryRequest(BaseModel):
     question: str
 
@@ -61,9 +58,20 @@ def search_database(query_text, top_k=5):
     conn.close()
     return results
 
+# Static Files (Production)
+# Mounting static files at /assets for Vite build
+if os.path.exists("frontend/dist"):
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def read_root():
+    # In production, serve frontend/dist/index.html
+    # In development, this won't be called if you use Vite's proxy
+    index_path = "frontend/dist/index.html"
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h3>Maliki AI Backend is running. Frontend not found in 'frontend/dist'.</h3>"
 
 @app.post("/ask")
 async def ask_maliki_ai(request: QueryRequest):
