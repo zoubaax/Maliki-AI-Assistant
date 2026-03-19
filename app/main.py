@@ -12,12 +12,10 @@ from dotenv import load_dotenv
 # Load configuration
 load_dotenv()
 
-# Database Config
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_NAME = os.getenv("DB_NAME", "maliki_ai")
-DB_USER = os.getenv("DB_USER", "admin")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "mypassword")
-DB_PORT = os.getenv("DB_PORT", "5432")
+# Database Config (Neon support)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:mypassword@db:5432/maliki_ai")
+if not DATABASE_URL.endswith("sslmode=require") and "neon.tech" in DATABASE_URL:
+    DATABASE_URL += "?sslmode=require"
 
 # API Config
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -33,13 +31,7 @@ class QueryRequest(BaseModel):
     question: str
 
 def get_db_connection():
-    return psycopg2.connect(
-        host=DB_HOST,
-        database=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        port=DB_PORT
-    )
+    return psycopg2.connect(DATABASE_URL)
 
 def search_database(query_text, top_k=5):
     query_vector = embed_model.encode(query_text).tolist()

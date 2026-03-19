@@ -28,8 +28,8 @@ COPY .env .
 # Copy built frontend from Stage 1
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-# Expose port
-EXPOSE 8000
+# Expose Hugging Face Default Port
+EXPOSE 7860
 
-# Start command
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start command (Port 7860)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
