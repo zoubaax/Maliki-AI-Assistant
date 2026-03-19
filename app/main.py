@@ -14,9 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database Config (Neon support)
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:mypassword@db:5432/maliki_ai")
-if not DATABASE_URL.endswith("sslmode=require") and "neon.tech" in DATABASE_URL:
-    DATABASE_URL += "?sslmode=require"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:mypassword@db:5432/maliki_ai").strip()
 
 # API Config
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

@@ -7,8 +7,11 @@ from dotenv import load_dotenv
 # Load config
 load_dotenv()
 
-# Neon Database URL (provided by user)
-NEON_DB_URL = "postgresql://REDACTED_USER:REDACTED_PASSWORD@ep-morning-river-amttzj53-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# Neon Database URL — loaded from .env file (never hardcode!)
+NEON_DB_URL = os.getenv("DATABASE_URL")
+if not NEON_DB_URL:
+    raise ValueError("❌ DATABASE_URL is not set. Please add it to your .env file.")
+NEON_DB_URL = NEON_DB_URL.strip()
 
 # Path to the chunks (from ingest.py output)
 CHUNKS_FILE = "data/processed/chunks.json"

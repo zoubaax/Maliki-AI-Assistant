@@ -1,55 +1,69 @@
-# Environment Variables
+# ========================
+# 🔒 SECRETS (NEVER COMMIT)
+# ========================
 .env
 .env.local
 .env.*
+*.pem
+*.key
 
-# Python
+# ========================
+# 🐍 Python
+# ========================
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 venv/
 .venv/
 env/
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
 
-# Node.js
+# ========================
+# 📦 Node.js
+# ========================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+frontend/dist/
 .next/
 out/
-dist/
 
-# Database
+# ========================
+# 🗄️ Database & Data Files
+# ========================
 *.db
 *.sqlite
 postgresql-data/
+data/raw/*.pdf
+data/raw/*.docx
+data/processed/chunks.json
 
-# OS
+# ========================
+# 📚 Books (too heavy for GitHub)
+# ========================
+books/
+data/raw/
+
+# ========================
+# 🛠️ Deployment Scripts (contain tokens)
+# ========================
+upload_to_hf.py
+scripts/upload_to_hf.py
+
+# ========================
+# 🖥️ OS Files
+# ========================
 .DS_Store
 Thumbs.db
 
-# Project-specific
-data/raw/*.pdf
-data/raw/*.docx
+# ========================
+# 🪵 Logs
+# ========================
 logs/
-
-# books
-books/
-data/raw/
+*.log

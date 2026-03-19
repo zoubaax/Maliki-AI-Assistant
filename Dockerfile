@@ -16,7 +16,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend application code
 COPY app/ ./app
 COPY scripts/ ./scripts
-COPY .env . 
 
 # Expose Hugging Face Default Port (7860)
 EXPOSE 7860
